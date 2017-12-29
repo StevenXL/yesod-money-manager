@@ -1,3 +1,8 @@
+## Status
+
+The intent of this project is to build a non-trivial web application using
+Haskell. At the moment, the project provides none of its intended functionality.
+
 ## Database Setup
 
 After installing Postgres, run:
