@@ -1,3 +1,10 @@
+## Status
+
+This is a pet project. The main goal of the project is to allow me to create a
+Haskell web application of non-trivial scope.
+
+At the moment, this project provides no true functionality.
+
 ## Database Setup
 
 After installing Postgres, run:
