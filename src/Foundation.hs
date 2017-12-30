@@ -120,6 +120,11 @@ instance Yesod App where
                     , menuItemAccessCallback = isNothing muser
                     }
                 , NavbarRight $ MenuItem
+                    { menuItemLabel = "Register"
+                    , menuItemRoute = RegistrationR
+                    , menuItemAccessCallback = isNothing muser
+                    }
+                , NavbarRight $ MenuItem
                     { menuItemLabel = "Logout"
                     , menuItemRoute = AuthR LogoutR
                     , menuItemAccessCallback = isJust muser
@@ -153,6 +158,7 @@ instance Yesod App where
     isAuthorized FaviconR _ = return Authorized
     isAuthorized RobotsR _ = return Authorized
     isAuthorized (StaticR _) _ = return Authorized
+    isAuthorized RegistrationR _ = return Authorized
 
     isAuthorized ProfileR _ = isAuthenticated
 
@@ -189,6 +195,7 @@ instance YesodBreadcrumbs App where
   breadcrumb HomeR = return ("Home", Nothing)
   breadcrumb (AuthR _) = return ("Login", Just HomeR)
   breadcrumb ProfileR = return ("Profile", Just HomeR)
+  breadcrumb RegistrationR = return ("Registration", Just HomeR)
   breadcrumb  _ = return ("home", Nothing)
 
 -- How to run database actions.
