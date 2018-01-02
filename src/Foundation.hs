@@ -17,7 +17,7 @@ import Text.Jasmine         (minifym)
 -- Used only when in "auth-dummy-login" setting is enabled.
 import Yesod.Auth.Dummy
 
-import Yesod.Auth.OpenId    (authOpenId, IdentifierType (Claimed))
+import Yesod.Auth.GoogleEmail2 (authGoogleEmail)
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
 import qualified Yesod.Core.Unsafe as Unsafe
@@ -29,11 +29,13 @@ import qualified Data.Text.Encoding as TE
 -- starts running, such as database connections. Every handler will have
 -- access to the data present here.
 data App = App
-    { appSettings    :: AppSettings
-    , appStatic      :: Static -- ^ Settings for static file serving.
-    , appConnPool    :: ConnectionPool -- ^ Database connection pool.
-    , appHttpManager :: Manager
-    , appLogger      :: Logger
+    { appSettings        :: AppSettings
+    , appStatic          :: Static -- ^ Settings for static file serving.
+    , appConnPool        :: ConnectionPool -- ^ Database connection pool.
+    , appHttpManager     :: Manager
+    , appLogger          :: Logger
+    , googleClientId     :: Text
+    , googleClientSecret :: Text
     }
 
 data MenuItem = MenuItem
@@ -220,7 +222,7 @@ instance YesodAuth App where
                 }
 
     -- You can add other plugins like Google Email, email or OAuth here
-    authPlugins app = [authOpenId Claimed []] ++ extraAuthPlugins
+    authPlugins app = [authGoogleEmail (googleClientId app) (googleClientSecret app)] ++ extraAuthPlugins
         -- Enable authDummy login if enabled.
         where extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]
 
