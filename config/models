@@ -20,7 +20,8 @@ Category json
   name Text
   UniqueName name
 Expense json
-  creationTime UTCTime
-  vendor Text
   amount Int
+  item Text
+  vendor Text
   categoryId CategoryId
+  creationTime UTCTime
