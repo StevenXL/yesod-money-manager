@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -6,7 +7,6 @@ module Handler.Expense where
 import Import
 import Types.Name (unName)
 import qualified Data.CaseInsensitive as CI
-import Prelude hiding ((.))
 
 getExpenseR :: Handler Html
 getExpenseR = do
@@ -27,7 +27,7 @@ expenseAForm categoryOptions = Expense
     <*> lift (liftIO getCurrentTime)
 
 toOptions :: [Entity Category] -> [CategoryOption]
-toOptions categories = Prelude.map categoryToOption categories
+toOptions categories = map categoryToOption categories
 
 categoryToOption :: Entity Category -> CategoryOption
 categoryToOption category = (categoryToText category, entityKey category)
