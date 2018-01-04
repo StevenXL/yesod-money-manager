@@ -4,6 +4,9 @@
 module Handler.Expense where
 
 import Import
+import Types.Name (unName)
+import qualified Data.CaseInsensitive as CI
+import Prelude hiding ((.))
 
 getExpenseR :: Handler Html
 getExpenseR = do
@@ -27,4 +30,5 @@ toOptions :: [Entity Category] -> [CategoryOption]
 toOptions categories = Prelude.map categoryToOption categories
 
 categoryToOption :: Entity Category -> CategoryOption
-categoryToOption category = (categoryName $ entityVal category, entityKey category)
+categoryToOption category = (categoryToText category, entityKey category)
+    where categoryToText = CI.original . unName . categoryName . entityVal

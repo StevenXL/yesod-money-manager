@@ -17,7 +17,7 @@ Comment json -- Adding "json" causes ToJSON and FromJSON instances to be derived
     deriving Eq
     deriving Show
 Category json
-  name Text
+  name Name sqltype=citext
   UniqueName name
 Expense json
   amount Int
