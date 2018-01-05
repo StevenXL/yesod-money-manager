@@ -1,11 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Handler.Expense where
 
 import Import
-import Types.Name (unName)
 import qualified Data.CaseInsensitive as CI
 
 getExpenseR :: Handler Html
