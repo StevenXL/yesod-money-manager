@@ -24,10 +24,10 @@ instance PersistField Name where
     fromPersistValue _ = Left "Unable to extract Name"
 
 instance ToJSON Name where
-    toJSON (Name name) = (String . CI.original) name
+    toJSON = String . unMask
 
 instance FromJSON Name where
-    parseJSON (String name) = (pure . Name . CI.mk) name
+    parseJSON (String name) = pure $ mkName name
     parseJSON invalid = typeMismatch "Name" invalid
 
 instance Show Name where
