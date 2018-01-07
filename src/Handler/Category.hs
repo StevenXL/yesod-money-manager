@@ -18,15 +18,17 @@ postCategoryR = do
     ((result, formWidget), formEnctype) <- runFormPost categoryForm
     case result of
         FormSuccess category -> handleFormSuccess category
-        _ -> defaultLayout [whamlet|
-                <form> method=post action=@{CategoryR} enctype={formEnctype}>
-                    ^{formWidget}
-                    <button>Submit
-             |]
+        _ -> defaultLayout $
+                [whamlet|
+                    <form method=post action=@{CategoryR} enctype={formEnctype}>
+                        ^{formWidget}
+                        <button>Submit
+                |]
 
 categoryAForm :: AForm Handler Category
 categoryAForm = Category
-    <$> areq nameField "Name" Nothing
+    <$> areq validatedNameField "Name" Nothing
+    where validatedNameField = checkM ensureNoDuplicates nameField
 
 categoryForm :: Form Category
 categoryForm = renderBootstrap categoryAForm
@@ -37,5 +39,8 @@ handleFormSuccess category@(Category name) = do
     setMessage $ toHtml $ "Successfully created category " ++ show name
     redirect CategoryR
 
--- put the category in the db
--- redirect to the category index page
+ensureNoDuplicates :: Name -> Handler (Either Text Name)
+ensureNoDuplicates name = do
+    maybePerson <- runDB $ getBy (UniqueName name)
+    return $ maybe (Right name) (const msg) maybePerson
+    where msg = Left $ "Name " <> unMask name <> " is already taken."
