@@ -13,6 +13,6 @@
 
 /profile ProfileR GET
 
-/expenses ExpenseR GET
+/expenses ExpenseR GET POST
 
 /categories CategoryR GET POST
