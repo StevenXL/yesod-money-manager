@@ -10,14 +10,18 @@ import qualified Data.CaseInsensitive as CI
 getExpenseR :: Handler Html
 getExpenseR = do
     categories <- runDB $ selectList [] [Asc CategoryName]
-    (formWidget, formEnctype) <- generateFormPost (expenseForm categories)
+    entityUser <- requireAuth
+    let userId = entityKey entityUser
+    (formWidget, formEnctype) <- generateFormPost (expenseForm userId categories)
     defaultLayout $(widgetFile "expense")
 
 
 postExpenseR :: Handler Html
 postExpenseR = do
     categories <- runDB $ selectList [] [Asc CategoryName]
-    ((result, formWidget), formEnctype) <- runFormPost (expenseForm categories)
+    entityUser <- requireAuth
+    let userId = entityKey entityUser
+    ((result, formWidget), formEnctype) <- runFormPost (expenseForm userId categories)
     case result of
         FormSuccess expense -> handleFormSuccess expense
         _ -> defaultLayout $
@@ -33,8 +37,8 @@ handleFormSuccess expense = do
     setMessage $ toHtml ("Successfully created expense." :: String)
     redirect ExpenseR
 
-expenseForm :: [Entity Category] -> Form Expense
-expenseForm = renderBootstrap . expenseAForm . toOptions
+expenseForm :: UserId -> [Entity Category] -> Form Expense
+expenseForm userId = renderBootstrap . expenseAForm  userId . toOptions
 
 type CategoryOption = (Text, Key Category)
 
@@ -45,10 +49,11 @@ categoryToOption :: Entity Category -> CategoryOption
 categoryToOption category = (categoryToText category, entityKey category)
     where categoryToText = CI.original . unName . categoryName . entityVal
 
-expenseAForm :: [CategoryOption] -> AForm Handler Expense
-expenseAForm categoryOptions = Expense
+expenseAForm :: UserId -> [CategoryOption] -> AForm Handler Expense
+expenseAForm userId categoryOptions = Expense
     <$> areq intField "Amount" Nothing
     <*> areq textField "Item"  Nothing
     <*> areq textField "Vendor"  Nothing
     <*> areq (selectFieldList categoryOptions) "Category" Nothing
     <*> lift (liftIO getCurrentTime)
+    <*> pure userId

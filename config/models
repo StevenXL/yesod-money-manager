@@ -25,4 +25,5 @@ Expense json
   vendor Text
   categoryId CategoryId
   creationTime UTCTime
+  userId UserId
   deriving Show
