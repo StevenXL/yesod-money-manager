@@ -10,8 +10,7 @@ import qualified Data.CaseInsensitive as CI
 getExpenseR :: Handler Html
 getExpenseR = do
     categories <- runDB $ selectList [] [Asc CategoryName]
-    entityUser <- requireAuth
-    let userId = entityKey entityUser
+    userId <- entityKey <$> requireAuth
     (formWidget, formEnctype) <- generateFormPost (expenseForm userId categories)
     defaultLayout $(widgetFile "expense")
 
@@ -19,8 +18,7 @@ getExpenseR = do
 postExpenseR :: Handler Html
 postExpenseR = do
     categories <- runDB $ selectList [] [Asc CategoryName]
-    entityUser <- requireAuth
-    let userId = entityKey entityUser
+    userId <- entityKey <$> requireAuth
     ((result, formWidget), formEnctype) <- runFormPost (expenseForm userId categories)
     case result of
         FormSuccess expense -> handleFormSuccess expense
