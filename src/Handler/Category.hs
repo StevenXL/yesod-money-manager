@@ -11,12 +11,14 @@ import Fields.NameField
 getCategoryR :: Handler Html
 getCategoryR = do
     allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
+    let badges = []
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
 
 postCategoryR :: Handler Html
 postCategoryR = do
     allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
+    let badges = []
     ((result, formWidget), formEnctype) <- runFormPost categoryForm
     case result of
         FormSuccess category -> handleFormSuccess category
