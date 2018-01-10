@@ -1,3 +1,7 @@
-<form method=post action=@{ExpenseR} enctype={formEnctype}>
-  ^{formWidget}
-  <button>Submit
+<p .lead> Log a New Expense
+
+<div .row>
+  <div .col-md-4>
+    <form method=post action=@{ExpenseR} enctype={formEnctype}>
+      ^{formWidget}
+      <button>Submit
