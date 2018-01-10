@@ -10,6 +10,7 @@ import Fields.NameField
 -- display a form for creating a cateogry
 getCategoryR :: Handler Html
 getCategoryR = do
+    allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
 
