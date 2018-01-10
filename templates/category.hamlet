@@ -1,3 +1,15 @@
-<form method=post action=@{CategoryR} enctype={formEnctype}>
+<p .lead>
+  Create a Category
+
+<form .bottom-pad method=post action=@{CategoryR} enctype=#{formEnctype}>
   ^{formWidget}
   <button>Submit
+
+<p .lead>
+  Existing Categories
+
+<div .row>
+  <div .col-md-4>
+    <ul .list-group>
+        $forall category <- allCategories
+            <li .list-group-item>#{unMask $ categoryName $ entityVal category}
