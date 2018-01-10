@@ -28,11 +28,11 @@ postCategoryR = do
 
 categoryAForm :: AForm Handler Category
 categoryAForm = Category
-    <$> areq validatedNameField "Name" Nothing
+    <$> areq validatedNameField (bfs ("Name" :: Text)) Nothing
     where validatedNameField = checkM ensureNoDuplicates nameField
 
 categoryForm :: Form Category
-categoryForm = renderBootstrap categoryAForm
+categoryForm = renderBootstrap3 BootstrapBasicForm categoryAForm
 
 handleFormSuccess :: Category -> Handler Html
 handleFormSuccess category@(Category name) = do

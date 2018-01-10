@@ -1,9 +1,11 @@
 <p .lead>
   Create a Category
 
-<form .bottom-pad method=post action=@{CategoryR} enctype=#{formEnctype}>
-  ^{formWidget}
-  <button>Submit
+<div .row>
+  <div .col-md-4>
+    <form .bottom-pad method=post action=@{CategoryR} enctype=#{formEnctype}>
+      ^{formWidget}
+      <button>Submit
 
 <p .lead>
   Existing Categories
