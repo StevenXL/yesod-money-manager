@@ -16,15 +16,11 @@ getCategoryR = do
 
 postCategoryR :: Handler Html
 postCategoryR = do
+    allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
     ((result, formWidget), formEnctype) <- runFormPost categoryForm
     case result of
         FormSuccess category -> handleFormSuccess category
-        _ -> defaultLayout $
-                [whamlet|
-                    <form method=post action=@{CategoryR} enctype={formEnctype}>
-                        ^{formWidget}
-                        <button>Submit
-                |]
+        _ -> defaultLayout $(widgetFile "category")
 
 categoryAForm :: AForm Handler Category
 categoryAForm = Category
