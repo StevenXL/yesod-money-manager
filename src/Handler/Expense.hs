@@ -36,7 +36,7 @@ handleFormSuccess expense = do
     redirect ExpenseR
 
 expenseForm :: UserId -> [Entity Category] -> Form Expense
-expenseForm userId = renderBootstrap . expenseAForm  userId . toOptions
+expenseForm userId = renderBootstrap3 BootstrapBasicForm . expenseAForm  userId . toOptions
 
 type CategoryOption = (Text, Key Category)
 
@@ -49,9 +49,9 @@ categoryToOption category = (categoryToText category, entityKey category)
 
 expenseAForm :: UserId -> [CategoryOption] -> AForm Handler Expense
 expenseAForm userId categoryOptions = Expense
-    <$> areq intField "Amount" Nothing
-    <*> areq textField "Item"  Nothing
-    <*> areq textField "Vendor"  Nothing
-    <*> areq (selectFieldList categoryOptions) "Category" Nothing
+    <$> areq intField (bfs ("Amount" :: Text)) Nothing
+    <*> areq textField (bfs ("Item" :: Text))  Nothing
+    <*> areq textField (bfs ("Vendor" :: Text))  Nothing
+    <*> areq (selectFieldList categoryOptions) (bfs ("Category" :: Text)) Nothing
     <*> lift (liftIO getCurrentTime)
     <*> pure userId
