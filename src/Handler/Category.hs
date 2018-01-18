@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -6,23 +7,36 @@ module Handler.Category where
 
 import Import
 import Fields.NameField
+import Database.Esqueleto (SqlReadT, (^.), InnerJoin(..), unValue)
+import qualified Database.Esqueleto as E
 
--- display a form for creating a cateogry
+-- HANDLERS
+
 getCategoryR :: Handler Html
 getCategoryR = do
-    allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
-    let badges = []
+    categoriesWithExpenseCount <- runDB categoriesWithExpenseCountQuery
+    let badges = categoriesToBadges categoriesWithExpenseCount
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
 
 postCategoryR :: Handler Html
 postCategoryR = do
-    allCategories <- runDB $ selectList [] [] :: Handler [Entity Category]
-    let badges = []
+    categoriesWithExpenseCount <- runDB categoriesWithExpenseCountQuery
+    let badges = categoriesToBadges categoriesWithExpenseCount
     ((result, formWidget), formEnctype) <- runFormPost categoryForm
     case result of
         FormSuccess category -> handleFormSuccess category
         _ -> defaultLayout $(widgetFile "category")
+
+-- HANDLER HELPERS
+
+handleFormSuccess :: Category -> Handler Html
+handleFormSuccess category@(Category name) = do
+    _ <- runDB $ insert category
+    setMessage $ toHtml $ "Successfully created category " ++ show name
+    redirect CategoryR
+
+-- FORMS
 
 categoryAForm :: AForm Handler Category
 categoryAForm = Category
@@ -32,14 +46,26 @@ categoryAForm = Category
 categoryForm :: Form Category
 categoryForm = renderBootstrap3 BootstrapBasicForm categoryAForm
 
-handleFormSuccess :: Category -> Handler Html
-handleFormSuccess category@(Category name) = do
-    _ <- runDB $ insert category
-    setMessage $ toHtml $ "Successfully created category " ++ show name
-    redirect CategoryR
 
 ensureNoDuplicates :: Name -> Handler (Either Text Name)
 ensureNoDuplicates name = do
     maybePerson <- runDB $ getBy (UniqueName name)
     return $ maybe (Right name) (const msg) maybePerson
     where msg = Left $ "Name " <> unMask name <> " is already taken."
+
+-- QUERIES
+categoriesWithExpenseCountQuery :: MonadIO m => SqlReadT m [(Entity Category, E.Value Int)]
+categoriesWithExpenseCountQuery = E.select $ E.from $ \(e `InnerJoin` c) -> do
+    E.on (e ^. ExpenseCategoryId E.==. c ^. CategoryId)
+    E.groupBy (c ^. CategoryId)
+    let cr = E.count (e ^. ExpenseAmount)
+    return (c, cr)
+
+-- OTHER
+categoriesToBadges :: [(Entity Category, E.Value Int)] -> [Badge]
+categoriesToBadges = map categoryToBadge
+
+categoryToBadge :: (Entity Category, E.Value Int) -> Badge
+categoryToBadge (categoryEntity, expenseCount) = let eCount = unValue expenseCount
+                                                     label = (unMask . categoryName . entityVal) categoryEntity
+                                                 in Badge label eCount
