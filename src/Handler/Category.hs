@@ -7,7 +7,7 @@ module Handler.Category where
 
 import Import
 import Fields.NameField
-import Database.Esqueleto (SqlReadT, (^.), InnerJoin(..), unValue)
+import Database.Esqueleto (SqlReadT, (^.), LeftOuterJoin(..), unValue)
 import qualified Database.Esqueleto as E
 
 -- HANDLERS
@@ -59,7 +59,7 @@ ensureNoDuplicates name = do
 
 -- QUERIES
 categoriesWithExpenseCountQuery :: MonadIO m => SqlReadT m [(Entity Category, E.Value Int)]
-categoriesWithExpenseCountQuery = E.select $ E.from $ \(e `InnerJoin` c) -> do
+categoriesWithExpenseCountQuery = E.select $ E.from $ \(c `LeftOuterJoin` e) -> do
     E.on (e ^. ExpenseCategoryId E.==. c ^. CategoryId)
     E.groupBy (c ^. CategoryId)
     let cr = E.count (e ^. ExpenseAmount)
