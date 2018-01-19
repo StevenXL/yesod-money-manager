@@ -14,15 +14,13 @@ import qualified Database.Esqueleto as E
 
 getCategoryR :: Handler Html
 getCategoryR = do
-    categoriesWithExpenseCount <- runDB categoriesWithExpenseCountQuery
-    let badges = categoriesToBadges categoriesWithExpenseCount
+    badges <- categoryBadges
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
 
 postCategoryR :: Handler Html
 postCategoryR = do
-    categoriesWithExpenseCount <- runDB categoriesWithExpenseCountQuery
-    let badges = categoriesToBadges categoriesWithExpenseCount
+    badges <- categoryBadges
     ((result, formWidget), formEnctype) <- runFormPost categoryForm
     case result of
         FormSuccess category -> handleFormSuccess category
@@ -35,6 +33,12 @@ handleFormSuccess category@(Category name) = do
     _ <- runDB $ insert category
     setMessage $ toHtml $ "Successfully created category " ++ show name
     redirect CategoryR
+
+categoryBadges :: Handler [Badge]
+categoryBadges = do
+    categoriesWithExpenseCount <- runDB categoriesWithExpenseCountQuery
+    return $ categoriesToBadges categoriesWithExpenseCount
+
 
 -- FORMS
 
