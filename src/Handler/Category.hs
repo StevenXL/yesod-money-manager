@@ -9,11 +9,13 @@ import Import
 import Fields.NameField
 import Database.Esqueleto (SqlReadT, (^.), LeftOuterJoin(..), unValue)
 import qualified Database.Esqueleto as E
+import Yesod.WebSockets (WebSocketsT, webSockets, sendTextData, sendClose)
 
 -- HANDLERS
 
 getCategoryR :: Handler Html
 getCategoryR = do
+    webSockets categoryCountPublisher
     badges <- categoryBadges
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
@@ -25,6 +27,16 @@ postCategoryR = do
     case result of
         FormSuccess category -> handleFormSuccess category
         _ -> defaultLayout $(widgetFile "category")
+
+-- what do we want our websockets app to do really?
+-- Well, we want it to forever read from a channel
+-- When data comes in to that channel, then we want to send a message to the
+-- client
+-- it publishes the count of a category
+categoryCountPublisher :: WebSocketsT Handler ()
+categoryCountPublisher = do
+    sendTextData ("" :: Text)
+    sendClose ("Thank you for coming." :: Text)
 
 -- HANDLER HELPERS
 

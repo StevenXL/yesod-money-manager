@@ -1,0 +1,26 @@
+$(function() {
+  var location = document.location
+  var url = 'ws://' + location.host + '/categories'
+
+  var socket = new WebSocket(url)
+
+  // Connected Successfully
+  socket.addEventListener('open', function(event) {
+    console.log('Connected successfully to web socket')
+  })
+
+  // Did not connect successfully
+  socket.addEventListener('error', function(event) {
+    console.log('Did not connect successfully to web socket.')
+  })
+
+  // Connection closed
+  socket.addEventListener('close', function(event) {
+    console.log('we closed')
+  })
+
+  // Message Received
+  socket.addEventListener('message', function(event) {
+    console.log(event)
+  })
+})
