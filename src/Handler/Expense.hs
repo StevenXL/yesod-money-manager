@@ -6,12 +6,11 @@
 module Handler.Expense where
 
 import Import
+import Data.Aeson (encode)
 import qualified Data.CaseInsensitive as CI
-import Data.Aeson (pairs, fromEncoding)
 import Database.Esqueleto ((^.), InnerJoin(..), unValue)
 import qualified Database.Esqueleto as E
 import qualified Prelude as P
-import Data.ByteString.Builder (toLazyByteString)
 
 getExpenseR :: Handler Html
 getExpenseR = do
@@ -47,15 +46,14 @@ handleFormSuccess expense = do
         let eCount = E.count (e ^. ExpenseId)
         return eCount
     let expenseCount = if null expensesCount then 0 else (unValue . P.head) expensesCount
-    atomically (writeToChan wChan category expenseCount)
+        serverEvent = NewCategoryCount category expenseCount
+    atomically (writeToChan wChan serverEvent)
     setMessage $ toHtml ("Successfully created expense." :: String)
     redirect ExpenseR
 
-writeToChan :: TChan Text -> Category -> Int -> STM ()
-writeToChan wChan category countOfExpenses = do
-        let name = unMask . categoryName $ category
-            encoding = pairs ("categoryName" .= name <> "expenseCount" .= countOfExpenses)
-        writeTChan wChan $ (decodeUtf8 . toStrict . toLazyByteString . fromEncoding) encoding
+writeToChan :: TChan Text -> ServerEvent -> STM ()
+writeToChan wChan serverEvent = do
+        writeTChan wChan $ (decodeUtf8 . toStrict . encode) serverEvent
 
 expenseForm :: UserId -> [Entity Category] -> Form Expense
 expenseForm userId = renderBootstrap3 BootstrapBasicForm . expenseAForm  userId . toOptions
