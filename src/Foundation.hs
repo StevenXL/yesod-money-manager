@@ -29,13 +29,14 @@ import qualified Data.Text.Encoding as TE
 -- starts running, such as database connections. Every handler will have
 -- access to the data present here.
 data App = App
-    { appSettings        :: AppSettings
-    , appStatic          :: Static -- ^ Settings for static file serving.
-    , appConnPool        :: ConnectionPool -- ^ Database connection pool.
-    , appHttpManager     :: Manager
-    , appLogger          :: Logger
-    , googleClientId     :: Text
-    , googleClientSecret :: Text
+    { appSettings            :: AppSettings
+    , appStatic              :: Static -- ^ Settings for static file serving.
+    , appConnPool            :: ConnectionPool -- ^ Database connection pool.
+    , appHttpManager         :: Manager
+    , appLogger              :: Logger
+    , googleClientId         :: Text
+    , googleClientSecret     :: Text
+    , categoryCountWriteChan :: TChan Text
     }
 
 data MenuItem = MenuItem

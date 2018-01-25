@@ -14,6 +14,7 @@
   <div .col-md-4>
     <ul .list-group>
         $forall badge <- badges
-            <li .list-group-item>
-                <span .badge>#{badgeCount badge}
-                #{badgeLabel badge}
+            $with label <- badgeLabel badge
+                <li .list-group-item ##{toLower label}>
+                    <span .badge>#{badgeCount badge}
+                    #{label}
