@@ -67,6 +67,7 @@ makeFoundation appSettings = do
         (appStaticDir appSettings)
     googleClientId     <- pack <$> getEnv "GOOGLE_CLIENT_ID"
     googleClientSecret <- pack <$> getEnv "GOOGLE_CLIENT_SECRET"
+    categoryCountWriteChan <- atomically newBroadcastTChan
     -- We need a log function to create a connection pool. We need a connection
     -- pool to create our foundation. And we need our foundation to get a
     -- logging function. To get out of this loop, we initially create a

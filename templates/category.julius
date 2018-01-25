@@ -4,11 +4,6 @@ $(function() {
 
   var socket = new WebSocket(url)
 
-  // Connected Successfully
-  socket.addEventListener('open', function(event) {
-    console.log('Connected successfully to web socket')
-  })
-
   // Did not connect successfully
   socket.addEventListener('error', function(event) {
     console.log('Did not connect successfully to web socket.')
@@ -21,6 +16,11 @@ $(function() {
 
   // Message Received
   socket.addEventListener('message', function(event) {
-    console.log(event)
+    var data = JSON.parse(event.data)
+    var id = data.categoryName.toLowerCase()
+    var newCount = data.expenseCount
+    var listItem = $('#' + id).first()
+    var span = listItem.children('span').first()
+    span.text(newCount)
   })
 })
