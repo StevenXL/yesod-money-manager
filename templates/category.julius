@@ -1,3 +1,16 @@
+function handleMessage(data) {
+  switch(data.event) {
+    case 'newCategoryCount':
+      var newCategoryCount = data.payload.count;
+      var id = data.payload.category.name.toLowerCase();
+      var span = $('#' + id).first().children('span').first();
+      span.text(newCategoryCount);
+      break;
+    default:
+      console.warn('Unknown event:' + data.event)
+  }
+}
+
 $(function() {
   var location = document.location
   var url = 'ws://' + location.host + '/categories'
@@ -16,11 +29,7 @@ $(function() {
 
   // Message Received
   socket.addEventListener('message', function(event) {
-    var data = JSON.parse(event.data)
-    var id = data.categoryName.toLowerCase()
-    var newCount = data.expenseCount
-    var listItem = $('#' + id).first()
-    var span = listItem.children('span').first()
-    span.text(newCount)
+    var data = JSON.parse(event.data);
+    return handleMessage(data);
   })
 })
