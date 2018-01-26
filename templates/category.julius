@@ -11,7 +11,29 @@ function handleMessage(data) {
   }
 }
 
+function attachObserverToBadges() {
+  var badges = document.querySelectorAll('.badge')
+
+  badges.forEach(function(badge) {
+    var animateBadge = function() {
+      var jBadge = $(badge);
+
+      function moveItBack() {
+        jBadge.animate({"font-size": "13px"})
+      }
+
+      jBadge.animate({"font-size": "18px"}, {complete: moveItBack})
+    }
+
+    var observer = new MutationObserver(animateBadge)
+
+    observer.observe(badge, {childList: true})
+  })
+}
+
 $(function() {
+  attachObserverToBadges()
+
   var location = document.location
   var url = 'ws://' + location.host + '/categories'
 
