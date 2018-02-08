@@ -6,17 +6,20 @@
 module Handler.Expense where
 
 import Import
-import Data.Aeson (encode)
+import Control.Concurrent (forkIO)
 import qualified Data.CaseInsensitive as CI
 import Database.Esqueleto ((^.), InnerJoin(..), unValue)
 import qualified Database.Esqueleto as E
 import qualified Prelude as P
+
+-- HANDLERS
 
 getExpenseR :: Handler Html
 getExpenseR = do
     categories <- runDB $ selectList [] [Asc CategoryName]
     userId <- entityKey <$> requireAuth
     (formWidget, formEnctype) <- generateFormPost (expenseForm userId categories)
+    (fileFormWidget, fileFormEnctype) <- generateFormPost expenseFileForm
     defaultLayout $(widgetFile "expense")
 
 
@@ -37,7 +40,7 @@ postExpenseR = do
 handleFormSuccess :: Expense -> Handler Html
 handleFormSuccess expense = do
     _ <- runDB $ insert expense
-    wChan <- categoryCountWriteChan <$> getYesod
+    wChan <- channel <$> getYesod
     Just category <- runDB $ get (expenseCategoryId expense)
     expensesCount :: [E.Value Int] <- runDB $ E.select $ E.from $ \(c `InnerJoin` e) -> do
         E.on (e ^. ExpenseCategoryId E.==. c ^. CategoryId)
@@ -47,16 +50,33 @@ handleFormSuccess expense = do
         return eCount
     let expenseCount = if null expensesCount then 0 else (unValue . P.head) expensesCount
         serverEvent = NewCategoryCount category expenseCount
-    atomically (writeToChan wChan serverEvent)
+    _ <- liftIO (forkIO $ atomically (writeToChan wChan serverEvent))
     setMessage $ toHtml ("Successfully created expense." :: String)
     redirect ExpenseR
 
-writeToChan :: TChan Text -> ServerEvent -> STM ()
-writeToChan wChan serverEvent = do
-        writeTChan wChan $ (decodeUtf8 . toStrict . encode) serverEvent
+-- FORMS
 
 expenseForm :: UserId -> [Entity Category] -> Form Expense
 expenseForm userId = renderBootstrap3 BootstrapBasicForm . expenseAForm  userId . toOptions
+
+expenseAForm :: UserId -> [CategoryOption] -> AForm Handler Expense
+expenseAForm userId categoryOptions = Expense
+    <$> areq intField (bfs ("Amount" :: Text)) Nothing
+    <*> areq textField (bfs ("Item" :: Text))  Nothing
+    <*> areq textField (bfs ("Vendor" :: Text))  Nothing
+    <*> areq (selectFieldList categoryOptions) (bfs ("Category" :: Text)) Nothing
+    <*> lift (liftIO getCurrentTime)
+    <*> pure userId
+
+expenseFileForm :: Form FileInfo
+expenseFileForm = renderBootstrap3 BootstrapBasicForm expenseAFileForm
+
+expenseAFileForm :: AForm Handler FileInfo
+expenseAFileForm = areq fileField (bfs ("CSV File" :: Text)) Nothing
+
+-- QUERIES
+
+-- OTHER
 
 type CategoryOption = (Text, Key Category)
 
@@ -67,11 +87,6 @@ categoryToOption :: Entity Category -> CategoryOption
 categoryToOption category = (categoryToText category, entityKey category)
     where categoryToText = CI.original . unName . categoryName . entityVal
 
-expenseAForm :: UserId -> [CategoryOption] -> AForm Handler Expense
-expenseAForm userId categoryOptions = Expense
-    <$> areq intField (bfs ("Amount" :: Text)) Nothing
-    <*> areq textField (bfs ("Item" :: Text))  Nothing
-    <*> areq textField (bfs ("Vendor" :: Text))  Nothing
-    <*> areq (selectFieldList categoryOptions) (bfs ("Category" :: Text)) Nothing
-    <*> lift (liftIO getCurrentTime)
-    <*> pure userId
+writeToChan :: TChan Text -> ServerEvent -> STM ()
+writeToChan wChan serverEvent = do
+        writeTChan wChan $ toText serverEvent

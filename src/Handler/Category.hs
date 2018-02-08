@@ -30,7 +30,7 @@ postCategoryR = do
 
 categoryCountPublisher :: WebSocketsT Handler ()
 categoryCountPublisher = do
-    wChan <- categoryCountWriteChan <$> getYesod
+    wChan <- channel <$> getYesod
     rChan <- atomically $ dupTChan wChan
     forever $ atomically (readTChan rChan) >>= sendTextData
 

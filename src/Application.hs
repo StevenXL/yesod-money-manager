@@ -45,6 +45,7 @@ import Handler.Home
 import Handler.Comment
 import Handler.Profile
 import Handler.Expense
+import Handler.ExpenseFile
 import Handler.Category
 
 -- This line actually creates our YesodDispatch instance. It is the second half
@@ -67,7 +68,7 @@ makeFoundation appSettings = do
         (appStaticDir appSettings)
     googleClientId     <- pack <$> getEnv "GOOGLE_CLIENT_ID"
     googleClientSecret <- pack <$> getEnv "GOOGLE_CLIENT_SECRET"
-    categoryCountWriteChan <- atomically newBroadcastTChan
+    channel            <- atomically newBroadcastTChan
     -- We need a log function to create a connection pool. We need a connection
     -- pool to create our foundation. And we need our foundation to get a
     -- logging function. To get out of this loop, we initially create a
