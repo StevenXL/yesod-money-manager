@@ -2,6 +2,7 @@
 module Types.Name where
 
 import Data.CaseInsensitive (CI)
+import Data.Csv (FromField(..))
 import qualified Data.CaseInsensitive as CI
 import Data.Aeson (ToJSON(..), Value(..), FromJSON(..))
 import Data.Aeson.Types (typeMismatch)
@@ -32,3 +33,6 @@ instance FromJSON Name where
 
 instance Show Name where
     show = unpack . unMask
+
+instance FromField Name where
+    parseField s = pure $ (mkName . decodeUtf8) s

@@ -15,4 +15,6 @@
 
 /expenses ExpenseR GET POST
 
+/expenses/file ExpenseFileR POST
+
 /categories CategoryR GET POST
