@@ -9,13 +9,13 @@ import Import
 import Fields.NameField
 import Database.Esqueleto (SqlReadT, (^.), LeftOuterJoin(..), unValue)
 import qualified Database.Esqueleto as E
-import Yesod.WebSockets (WebSocketsT, webSockets, sendTextData)
-
+import Yesod.WebSockets (webSockets)
+import Socket.ServerEventSocket (serverEventSocket)
 -- HANDLERS
 
 getCategoryR :: Handler Html
 getCategoryR = do
-    webSockets categoryCountPublisher
+    webSockets serverEventSocket
     badges <- categoryBadges
     (formWidget, formEnctype) <- generateFormPost categoryForm
     defaultLayout $(widgetFile "category")
@@ -27,12 +27,6 @@ postCategoryR = do
     case result of
         FormSuccess category -> handleFormSuccess category
         _ -> defaultLayout $(widgetFile "category")
-
-categoryCountPublisher :: WebSocketsT Handler ()
-categoryCountPublisher = do
-    wChan <- channel <$> getYesod
-    rChan <- atomically $ dupTChan wChan
-    forever $ atomically (readTChan rChan) >>= sendTextData
 
 handleFormSuccess :: Category -> Handler Html
 handleFormSuccess category@(Category name) = do

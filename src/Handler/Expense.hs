@@ -11,11 +11,14 @@ import qualified Data.CaseInsensitive as CI
 import Database.Esqueleto ((^.), InnerJoin(..), unValue)
 import qualified Database.Esqueleto as E
 import qualified Prelude as P
+import Yesod.WebSockets (webSockets)
+import Socket.ServerEventSocket (serverEventSocket)
 
 -- HANDLERS
 
 getExpenseR :: Handler Html
 getExpenseR = do
+    webSockets serverEventSocket
     categories <- runDB $ selectList [] [Asc CategoryName]
     userId <- entityKey <$> requireAuth
     (formWidget, formEnctype) <- generateFormPost (expenseForm userId categories)

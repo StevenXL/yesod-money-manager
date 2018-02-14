@@ -7,6 +7,9 @@ module Handler.ExpenseFile where
 import Import
 import Handler.Expense (expenseFileForm)
 import Data.Csv (decodeByName, FromNamedRecord(..))
+import Control.Concurrent (forkIO)
+import Data.Pool (withResource)
+import Database.Persist.Sql (ConnectionPool)
 import qualified Data.Csv as Csv
 
 postExpenseFileR :: Handler Html
@@ -16,7 +19,6 @@ postExpenseFileR = do
         FormSuccess fileInfo -> handleFormSuccess fileInfo
         _ -> handleFormUnsuccess
 
--- vExpenseShell :: Either String (Vector ExpenseShell)
 handleFormSuccess :: FileInfo -> Handler Html
 handleFormSuccess fileInfo = do
     vExpenseShell <- runConduit $ fileSource fileInfo .| parseCSV
@@ -25,36 +27,41 @@ handleFormSuccess fileInfo = do
             setMessage "Failed to read CSV file. Contact administrator."
             redirect ExpenseR
         Right shells -> do
-            -- process shells
+            tChan      <- channel <$> getYesod
+            categories <- runDB $ selectList [] []
+            user       <- entityKey <$> requireAuth
+            pool       <- appConnPool <$> getYesod
+            let processWith = processShell tChan categories user pool
+            _          <- liftIO $ forkIO $ (runConcurrently $ processShells shells processWith)
             redirect ExpenseR
 
-processShell :: TChan Text -> [CategoryId] -> UserId -> ExpenseShell -> IO ()
-processShell tChan categoryIds userId ExpenseShell{..} = do
-    let mCategoryId = findCategoryId categoryIds esCategory
+processShells :: Vector ExpenseShell -> (ExpenseShell -> IO ()) -> Concurrently IO ()
+processShells shells processor = foldr (<>) mempty . map Concurrently . map processor $ shells
+
+processShell :: TChan Text -> [Entity Category] -> UserId -> ConnectionPool -> ExpenseShell -> IO ()
+processShell tChan categories userId pool ExpenseShell{..} = do
+    let mCategoryId = findCategoryId categories esCategory
     case mCategoryId of
         Nothing -> informNoSuchCategory tChan (NoSuchCategory esCategory)
-        Just categoryId -> error "still working on the good case"
+        Just categoryId -> do
+            utcTime <- getCurrentTime
+            let expense = Expense esAmount esItem esVendor categoryId utcTime userId
+            _       <- withResource pool (runReaderT $ insert_ expense)
+            let serverEvent = NewExpense expense
+            atomically $ writeTChan tChan (toText serverEvent)
+
 
 informNoSuchCategory :: TChan Text -> ServerEvent -> IO ()
 informNoSuchCategory tChan serverEvent = atomically $ writeTChan tChan (toText serverEvent)
 
 
-findCategoryId :: [CategoryId] -> Name -> Maybe CategoryId
-findCategoryId = error "working on it"
--- how do we process a shell, what data do we need?
--- well, first we are going to insert the shell and then tell the tchan
--- in order to insert the shell we need an expense
--- in order to get an expense we need extra info no in the shell
--- we need a userid, a list of category ids and a utctime
--- we can get all of those and then create 
--- to get a concurrently value, we need an IO action
--- to get an IO action we need an IO action;
--- atomically can give us an IO action provided we give it an STM value
--- why can we leave the atomically part until teh end? I think we can
+findCategoryId :: [Entity Category] -> Name -> Maybe CategoryId
+findCategoryId [] _ = Nothing
+findCategoryId (ec:ecs) name = if categoryHasName
+                                   then Just $ entityKey ec
+                                   else findCategoryId ecs name
+                                where categoryHasName = (categoryName . entityVal) ec == name
 
--- we want to do stuff concurrently, so for each shell, we want to create
--- a Concurrently value; then we want to monoidally concat all those values to
--- get one corrently, then we want to runconcurrently all of that
 parseCSV :: Monad m => ConduitM ByteString o m (Either String (Vector ExpenseShell))
 parseCSV = do
     mBS <- await
