@@ -36,7 +36,7 @@ handleFormSuccess fileInfo = do
             _          <- liftIO $ forkIO $ mapConcurrently_ processWith shells
             redirect ExpenseR
 
-processShell :: TChan Text -> [Entity Category] -> UserId -> ConnectionPool -> ExpenseShell -> IO ()
+processShell :: TChan ServerEvent -> [Entity Category] -> UserId -> ConnectionPool -> ExpenseShell -> IO ()
 processShell tChan categories userId pool ExpenseShell{..} = do
     let mCategoryId = findCategoryId categories esCategory
     case mCategoryId of
@@ -46,10 +46,10 @@ processShell tChan categories userId pool ExpenseShell{..} = do
             let expense = Expense esAmount esItem esVendor categoryId utcTime userId
             _       <- withResource pool (runReaderT $ insert_ expense)
             let serverEvent = NewExpense expense
-            atomically $ writeTChan tChan (toText serverEvent)
+            atomically $ writeTChan tChan serverEvent
 
-informNoSuchCategory :: TChan Text -> ServerEvent -> IO ()
-informNoSuchCategory tChan serverEvent = atomically $ writeTChan tChan (toText serverEvent)
+informNoSuchCategory :: TChan ServerEvent -> ServerEvent -> IO ()
+informNoSuchCategory tChan serverEvent = atomically $ writeTChan tChan serverEvent
 
 
 findCategoryId :: [Entity Category] -> Name -> Maybe CategoryId
