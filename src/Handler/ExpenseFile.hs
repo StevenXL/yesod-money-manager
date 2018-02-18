@@ -8,6 +8,7 @@ import Import
 import Handler.Expense (expenseFileForm)
 import Data.Csv (decodeByName, FromNamedRecord(..))
 import Control.Concurrent (forkIO)
+import Control.Concurrent.Async.Lifted.Safe (mapConcurrently_)
 import Data.Pool (withResource)
 import Database.Persist.Sql (ConnectionPool)
 import qualified Data.Csv as Csv
@@ -32,11 +33,8 @@ handleFormSuccess fileInfo = do
             user       <- entityKey <$> requireAuth
             pool       <- appConnPool <$> getYesod
             let processWith = processShell tChan categories user pool
-            _          <- liftIO $ forkIO $ (runConcurrently $ processShells shells processWith)
+            _          <- liftIO $ forkIO $ mapConcurrently_ processWith shells
             redirect ExpenseR
-
-processShells :: Vector ExpenseShell -> (ExpenseShell -> IO ()) -> Concurrently IO ()
-processShells shells processor = foldr (<>) mempty . map Concurrently . map processor $ shells
 
 processShell :: TChan Text -> [Entity Category] -> UserId -> ConnectionPool -> ExpenseShell -> IO ()
 processShell tChan categories userId pool ExpenseShell{..} = do
@@ -49,7 +47,6 @@ processShell tChan categories userId pool ExpenseShell{..} = do
             _       <- withResource pool (runReaderT $ insert_ expense)
             let serverEvent = NewExpense expense
             atomically $ writeTChan tChan (toText serverEvent)
-
 
 informNoSuchCategory :: TChan Text -> ServerEvent -> IO ()
 informNoSuchCategory tChan serverEvent = atomically $ writeTChan tChan (toText serverEvent)
