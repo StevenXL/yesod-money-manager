@@ -36,7 +36,7 @@ data App = App
     , appLogger              :: Logger
     , googleClientId         :: Text
     , googleClientSecret     :: Text
-    , channel                :: TChan Text
+    , channel                :: TChan ServerEvent
     }
 
 data MenuItem = MenuItem

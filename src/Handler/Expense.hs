@@ -90,6 +90,5 @@ categoryToOption :: Entity Category -> CategoryOption
 categoryToOption category = (categoryToText category, entityKey category)
     where categoryToText = CI.original . unName . categoryName . entityVal
 
-writeToChan :: TChan Text -> ServerEvent -> STM ()
-writeToChan wChan serverEvent = do
-        writeTChan wChan $ toText serverEvent
+writeToChan :: TChan ServerEvent -> ServerEvent -> STM ()
+writeToChan wChan serverEvent = writeTChan wChan serverEvent
